@@ -1,0 +1,29 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: home
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: '5'
+        autoscaling.knative.dev/minScale: '1'
+    spec:
+      containerConcurrency: 0
+      containers:
+        - envFrom:
+            - configMapRef:
+                name: retro-webapp-config
+          image: 'quay.io/rguske/retroplay-welcome:v1.0'
+          imagePullPolicy: Always
+          name: retroplay-ksvc
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi

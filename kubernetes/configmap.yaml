@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: retro-webapp-config
+data:
+  TEXTBOX_TITLE: "Retroplay Online by Guske Labs"
+  TEXTBOX_PLACEHOLDER: "This little fun project supports my homelab use case which justifies running an OpenShift cluster at home. Enjoy your stay!"
+  TEXTBOX_DEFAULT: "Retroplay Online by Robert Guske."
+  BG_MODE: "gradient"
+  BG_SOLID: "#0b1020"
+  BG_GRAD_FROM: "#0b1020"
+  BG_GRAD_TO: "#1b3a6b"
+  BG_IMAGE_URL: "https://raw.githubusercontent.com/rguske/jarvislab/main/assets/retroplayonline-logo.png"
+  NAV_LINKS_JSON: |
+    [
+      {"label":"Pacman","url":"https://pacman-pacman.apps.ocp-mk42.retroplay.guske.io/"},
+      {"label":"VM CMDB","url":"https://postgresql-read-webapp-postgres.apps.ocp-mk42.retroplay.guske.io"},
+      {"label":"Robert @ GitHub","url":"https://github.com/rguske"},
+      {"label":"Robert's Blog","url":"https://rguske.github.io"}
+    ]
