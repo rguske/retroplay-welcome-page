@@ -4,9 +4,9 @@ metadata:
   name: retro-webapp-config
 data:
   TEXTBOX_TITLE: "Retroplay Online by Guske Labs"
-  TEXTBOX_PLACEHOLDER: "This little fun project supports my homelab use case which justifies running an OpenShift cluster at home. Enjoy your stay!"
+  TEXTBOX_PLACEHOLDER: "This little fun project supports my homelab use case which hosts retro-games on an OpenShift cluster at home."
   TEXTBOX_DEFAULT: "Retroplay Online by Robert Guske."
-  BG_MODE: "gradient"
+  BG_MODE: "image"
   BG_SOLID: "#0b1020"
   BG_GRAD_FROM: "#0b1020"
   BG_GRAD_TO: "#1b3a6b"
