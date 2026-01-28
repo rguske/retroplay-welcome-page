@@ -14,7 +14,7 @@ spec:
         - envFrom:
             - configMapRef:
                 name: retro-webapp-config
-          image: 'quay.io/rguske/retroplay-welcome:v1.0'
+          image: 'quay.io/rguske/retroplay-welcome:v1.1'
           imagePullPolicy: Always
           name: retroplay-ksvc
           ports:

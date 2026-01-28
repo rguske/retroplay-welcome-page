@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 
 function getConfig() {
   const cfg = window.APP_CONFIG || {};
@@ -14,10 +14,10 @@ function getConfig() {
       { label: "Kubernetes Docs", url: "https://kubernetes.io/docs/" },
       { label: "GitHub", url: "https://github.com/" }
     ],
-    textBox: {
-      title: cfg.textBox?.title || "NOTES",
-      placeholder: cfg.textBox?.placeholder || "Type something retro...",
-      defaultText: cfg.textBox?.defaultText || "WELCOME, PLAYER ONE."
+    centerBox: {
+      title: cfg.centerBox?.title || "RETROPLAY",
+      text: cfg.centerBox?.text || "WELCOME, PLAYER ONE.",
+      subtext: cfg.centerBox?.subtext || ""
     }
   };
 }
@@ -26,50 +26,24 @@ function normalizeUrl(u) {
   try { return new URL(u).toString(); } catch { return u; }
 }
 
-const STORAGE_KEY = "retro-webapp:textbox";
-
 export default function App() {
   const initial = useMemo(() => getConfig(), []);
 
-  // Background still comes from config at startup; keep your existing background behavior
-  const [bgMode] = useState(initial.background.mode);
-  const [bgSolid] = useState(initial.background.solid);
-  const [bgFrom] = useState(initial.background.gradientFrom);
-  const [bgTo] = useState(initial.background.gradientTo);
-  const [bgImageUrl] = useState(initial.background.imageUrl);
-
   const [activeUrl, setActiveUrl] = useState(initial.navLinks[0]?.url || "");
 
-  // Textbox: initialize from localStorage if present, else from config default
-  const [text, setText] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved !== null ? saved : initial.textBox.defaultText;
-  });
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, text);
-  }, [text]);
-
   const backgroundStyle = useMemo(() => {
-    if (bgMode === "solid") return { background: bgSolid };
-    if (bgMode === "image" && bgImageUrl) {
+    const b = initial.background;
+    if (b.mode === "solid") return { background: b.solid };
+    if (b.mode === "image" && b.imageUrl) {
       return {
-        backgroundImage: `url(${bgImageUrl})`,
+        backgroundImage: `url(${b.imageUrl})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat"
       };
     }
-    return { background: `linear-gradient(135deg, ${bgFrom}, ${bgTo})` };
-  }, [bgMode, bgSolid, bgFrom, bgTo, bgImageUrl]);
-
-  const resetText = () => {
-    setText(initial.textBox.defaultText);
-  };
-
-  const clearText = () => {
-    setText("");
-  };
+    return { background: `linear-gradient(135deg, ${b.gradientFrom}, ${b.gradientTo})` };
+  }, [initial.background]);
 
   return (
     <div className="layout" style={backgroundStyle}>
@@ -97,39 +71,15 @@ export default function App() {
             })}
           </nav>
         </div>
-
-        {/* Bottom-left control pane */}
-        <div className="navBottom">
-          <div className="textBoxTitle">{initial.textBox.title}</div>
-
-          <textarea
-            className="textArea"
-            value={text}
-            placeholder={initial.textBox.placeholder}
-            onChange={(e) => setText(e.target.value)}
-          />
-
-          <div className="helperRow">
-            <button className="smallBtn" type="button" onClick={resetText}>
-              RESET
-            </button>
-            <button className="smallBtn" type="button" onClick={clearText}>
-              CLEAR
-            </button>
-          </div>
-        </div>
       </aside>
 
-      <main className="main">
-        <div className="card">
-          <div className="h1">DISPLAY</div>
-          <p className="p">
-            This area reflects the text you enter in the sidebar textbox.
-          </p>
-
-          <div style={{ whiteSpace: "pre-wrap", fontSize: "10px", lineHeight: "1.9" }}>
-            {text || "(empty)"}
-          </div>
+      <main className="main mainCenter">
+        <div className="centerBox">
+          <div className="centerTitle">{initial.centerBox.title}</div>
+          <div className="centerText">{initial.centerBox.text}</div>
+          {initial.centerBox.subtext ? (
+            <div className="centerSubtext">{initial.centerBox.subtext}</div>
+          ) : null}
         </div>
       </main>
     </div>

@@ -22,10 +22,26 @@ This is running cleanly on Kubernetes and meets my UI requirements:
 
 It’ll load a global `window.APP_CONFIG` from `/config.js`. That file is generated at container start from environment variables, so Kubernetes can control it via `ConfigMap/Env`.
 
-`public/config.template.js`
+`nginx/entrypoint.sh`
 
-```js
-// This file is rendered into /usr/share/nginx/html/config.js at container startup.
+```bash
+#!/bin/sh
+set -eu
+
+: "${BG_MODE:=gradient}"
+: "${BG_SOLID:=#0b1020}"
+: "${BG_GRAD_FROM:=#0b1020}"
+: "${BG_GRAD_TO:=#1b3a6b}"
+: "${BG_IMAGE_URL:=}"
+: "${NAV_LINKS_JSON:=[{\"label\":\"Kubernetes\",\"url\":\"https://kubernetes.io\"}]}"
+
+# NEW: static center box config
+: "${CENTER_BOX_TITLE:=RETROPLAY}"
+: "${CENTER_BOX_TEXT:=WELCOME, PLAYER ONE.}"
+: "${CENTER_BOX_SUBTEXT:=Configured via ConfigMap/env.}"
+
+OUT=/tmp/config.js
+cat > "$OUT" <<EOF
 window.APP_CONFIG = {
   background: {
     mode: "${BG_MODE}",
@@ -35,13 +51,18 @@ window.APP_CONFIG = {
     imageUrl: "${BG_IMAGE_URL}"
   },
   navLinks: ${NAV_LINKS_JSON},
-
-  textBox: {
-    title: "${TEXTBOX_TITLE}",          // e.g. "NOTES"
-    placeholder: "${TEXTBOX_PLACEHOLDER}", // e.g. "Type something retro..."
-    defaultText: "${TEXTBOX_DEFAULT}"   // e.g. "WELCOME, PLAYER ONE."
+  centerBox: {
+    title: "${CENTER_BOX_TITLE}",
+    text: "${CENTER_BOX_TEXT}",
+    subtext: "${CENTER_BOX_SUBTEXT}"
   }
 };
+EOF
+
+# Optional: show a one-line log to confirm generation
+echo "Generated $OUT" >&2
+
+exec nginx -g 'daemon off;'
 ```
 
 ```code
