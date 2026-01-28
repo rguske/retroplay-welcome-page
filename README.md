@@ -1,5 +1,19 @@
 # Website for Roberts Fun Project - Retroplay Online
 
+- [Website for Roberts Fun Project - Retroplay Online](#website-for-roberts-fun-project---retroplay-online)
+  - [Intro](#intro)
+  - [Containerfile](#containerfile)
+  - [Build the Container Multi-Arch (arm64 + amd64)](#build-the-container-multi-arch-arm64--amd64)
+    - [Push the Container Image](#push-the-container-image)
+    - [Run the Container](#run-the-container)
+  - [Run it on OpenShift/Kubernetes](#run-it-on-openshiftkubernetes)
+    - [ServiceAccount](#serviceaccount)
+    - [Deployment](#deployment)
+    - [Optional: Knative Service](#optional-knative-service)
+    - [Update Image Ref for the Knative Service](#update-image-ref-for-the-knative-service)
+
+## Intro
+
 This is running cleanly on Kubernetes and meets my UI requirements:
 
 * Adjustable background (via UI controls and/or environment variables)
@@ -29,8 +43,6 @@ window.APP_CONFIG = {
   }
 };
 ```
-
-
 
 ```code
 tree -L 2
@@ -97,8 +109,43 @@ tree -L 2
 
 ## Containerfile
 
-```
+```code
+# Build stage
+#FROM node:20-alpine AS build
+FROM registry.access.redhat.com/ubi9/nodejs-20:9.7 AS build
+LABEL maintainer="Robert Guske"
+LABEL description="Fun Project - Retroplay Online Lab Website"
+WORKDIR /app
 
+# Fix Permissions
+RUN fix-permissions /app -P
+
+COPY package.json package-lock.json* ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# Runtime stage
+FROM registry.access.redhat.com/ubi9/nginx-120
+
+USER 0
+
+# Replace the base nginx.conf that contains its own default server
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
+
+# Your vhost
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+
+# Entrypoint
+COPY --chown=1001:0 nginx/entrypoint.sh /entrypoint.sh
+RUN chmod 0755 /entrypoint.sh
+
+# Static assets (match the root above)
+COPY --from=build --chown=1001:0 /app/dist/ /usr/share/nginx/html/
+
+USER 1001
+EXPOSE 8080
+ENTRYPOINT ["/entrypoint.sh"]
 ```
 
 What `fix-permissions` actually does (important). In UBI / OpenShift images, fix-permissions:
@@ -130,8 +177,11 @@ podman build --platform linux/arm64,linux/amd64 --manifest retroplay-welcome .
 
 Inspect build:
 
-```json
+```code
 podman manifest inspect retroplay-welcome
+```
+
+```json
 {
     "schemaVersion": 2,
     "mediaType": "application/vnd.oci.image.index.v1+json",
@@ -172,13 +222,13 @@ registry.access.redhat.com/ubi9/nodejs-20  9.7         bf23c8b9fdef  36 hours ag
 registry.access.redhat.com/ubi9/nginx-120  latest      1efa11ba4723  36 hours ago   399 MB
 ```
 
-## Push the Container Image
+### Push the Container Image
 
 ```code
 podman manifest push localhost/retroplay-welcome quay.io/rguske/retroplay-welcome:v1.0
 ```
 
-## Run the Container
+### Run the Container
 
 ```code
 podman run -p 8080:8080 \
@@ -188,21 +238,17 @@ podman run -p 8080:8080 \
   quay.io/rguske/retroplay-welcome:v1.0
 ```
 
-## Run it on OpenShift
+## Run it on OpenShift/Kubernetes
 
-For sake of the demo, I'm running `oc adm policy add-scc-to-user anyuid -z default` before I deploy the app. Implications are:
+### ServiceAccount
 
-* Grants the anyuid Security Context Constraint to the default ServiceAccount
-* Allows containers using that ServiceAccount to:
-  * Run as root (UID 0) or any arbitrary UID
-  * Bypass OpenShift’s default non-root enforcement
-  * Effectively disables one of OpenShift’s core security protections for all pods using default in that namespace
+Create a `ServiceAccount` which will be sued for the deployment.
 
 ```code
 oc create sa retro-webapp
 ```
 
-Update the deployment manifest:
+Update the deployment manifest accordingly:
 
 ```code
 spec:
@@ -216,6 +262,23 @@ Create the `scc`:
 ```code
 oc adm policy add-scc-to-user anyuid -z retro-webapp
 ```
+
+If no `ServiceAccount` is provided, the container will fail starting. Another easy way to go is by applying the `scc` policy to the default user which exists in every `namespace`.
+
+```code
+oc adm policy add-scc-to-user anyuid -z default
+```
+
+Implications:
+
+* Grants the anyuid Security Context Constraint to the default ServiceAccount
+* Allows containers using that ServiceAccount to:
+  * Run as root (UID 0) or any arbitrary UID
+  * Bypass OpenShift’s default non-root enforcement
+  * Effectively disables one of OpenShift’s core security protections for all pods using default in that namespace
+
+
+### Deployment
 
 Apply the following manifest files or create an ArgoCD Application.
 
@@ -246,6 +309,8 @@ spec:
                 port:
                   number: 80
 ```
+
+### Optional: Knative Service
 
 Since I'm a big fan of [Knative](https://knative.dev), a Knative Service (`ksvc`) example is also included:
 
@@ -290,6 +355,8 @@ kn service create home \
  --scale-min=0 \
  --scale-max=5
 ```
+
+### Update Image Ref for the Knative Service
 
 If you've created a new version of the app, just update the `revision` of the `ksvc`:
 
