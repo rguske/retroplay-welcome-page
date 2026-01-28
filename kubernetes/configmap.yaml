@@ -13,6 +13,7 @@ data:
   BG_IMAGE_URL: "https://raw.githubusercontent.com/rguske/jarvislab/main/assets/retroplayonline-logo.png"
   NAV_LINKS_JSON: |
     [
+      {"label":"OCP-MK42 WebConsole","url":"https://console-openshift-console.apps.ocp-mk42.retroplay.guske.io/"},
       {"label":"Pacman","url":"https://pacman-pacman.apps.ocp-mk42.retroplay.guske.io/"},
       {"label":"VM CMDB","url":"https://postgresql-read-webapp-postgres.apps.ocp-mk42.retroplay.guske.io"},
       {"label":"Robert @ GitHub","url":"https://github.com/rguske"},
